@@ -191,7 +191,7 @@ def train_sat(train_ds, eps, alpha, steps, pretrained_path=None,
         model = build_vgg_like()
     else:
         print(f"[SAT] Loading pretrained model from {pretrained_path}")
-        load_model(pretrained_path, compile=False)
+         model = load_model(pretrained_path, compile=False)
     opt = tf.keras.optimizers.Adam(LR)
 
     for ep in range(EPOCHS):
@@ -232,7 +232,7 @@ def train_cat(train_ds, mapping_T, A_tf, eps, alpha, steps, pretrained_path=None
         model = build_vgg_like()
     else:
         print(f"[CAT] Loading pretrained model from {pretrained_path}")
-        load_model(pretrained_path, compile=False)
+         model = load_model(pretrained_path, compile=False)
     Mc = len(mapping_T)    
     opt = tf.keras.optimizers.Adam(LR)
     for ep in range(EPOCHS):
