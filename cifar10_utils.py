@@ -95,14 +95,12 @@ def pgd_linf(model, x, y_fine, y_coarse, eps, alpha, steps, loss_mode, A_tf,
         with tf.GradientTape() as tape:
             tape.watch(x_adv)
             p_f = model(x_adv, training=training_flag)
-            if loss_mode == "fine":
-                loss = ce(y_fine, p_f)
-            elif loss_mode == "coarse":
+            if loss_mode == "coarse": #CAT 
                 q = tf.matmul(p_f, A_tf)
                 loss = ce(y_coarse, q)
-            else:  # 'joint'
-                q = tf.matmul(p_f, A_tf)
-                loss = ce(y_fine, p_f) + ce(y_coarse, q)
+            else:   #SAT 
+                loss = ce(y_fine, p_f)
+
         grad = tape.gradient(loss, x_adv)
         x_adv = x_adv + alpha * tf.sign(grad)
         # project to l_inf ball & valid pixel range
@@ -148,8 +146,7 @@ def build_vgg_like(input_shape=(32, 32, 3), num_classes=10):
     ])
     return model
 
-def train_nt_cifar10(train_ds, test_ds, test_labels, mapping_T,
-                     run_tag="NT_clean", epochs=EPOCHS, save_root="./NewModels"):
+def train_nt_cifar10(train_ds, run_tag="NT_clean", epochs=EPOCHS, save_root="./CIFAR10_models"):
     """
     Natural Training (NT) for CIFAR-10 using clean data only.
     - train_ds: tf.data.Dataset from load_cifar10()
@@ -175,10 +172,8 @@ def train_nt_cifar10(train_ds, test_ds, test_labels, mapping_T,
             opt.apply_gradients(zip(grads, model.trainable_variables))
             losses.append(float(loss.numpy()))
 
-        casr = eval_casr(model, test_ds, test_labels, mapping_T, eps=EPS_EVAL, alpha=ALPHA, steps=PGD_STEPS_EVAL)
         print(f"[NT-CIFAR] Epoch {ep:02d}/{epochs} | "
-                f"train_loss={np.mean(losses):.4f} | "
-                f"CASR@ε={EPS}={casr:.4f}")
+                f"train_loss={np.mean(losses):.4f} | ")
 
     # Save model
     final_path = os.path.join(save_root, f"CIFAR10_{run_tag}_final.keras")
@@ -187,7 +182,7 @@ def train_nt_cifar10(train_ds, test_ds, test_labels, mapping_T,
 
 
 
-def train_sat(train_ds, pretrained_path=None,
+def train_sat(train_ds, eps, alpha, steps, pretrained_path=None,
                     out_dir="./CIFAR10_models",
                     attack = "PGD"):
     # Choose model source
@@ -205,7 +200,7 @@ def train_sat(train_ds, pretrained_path=None,
         for xb, yb in train_ds:
             # PGD on fine loss
             x_adv = pgd_linf(
-                model, xb, yb, None, EPS, ALPHA, PGD_STEPS_TRAIN,
+                model, xb, yb, None, eps, alpha, steps,
                 "fine", A_tf=None, training_flag=False
             )
             with tf.GradientTape() as tape:
@@ -227,7 +222,7 @@ def train_sat(train_ds, pretrained_path=None,
     return model
 
 
-def train_cat(train_ds, mapping_T, A_tf, pretrained_path=None,
+def train_cat(train_ds, mapping_T, A_tf, eps, alpha, steps, pretrained_path=None,
                     out_dir="./CIFAR10_models",
                     tag="T1",
                     attack = "PGD"):
@@ -254,7 +249,7 @@ def train_cat(train_ds, mapping_T, A_tf, pretrained_path=None,
 
             # PGD on COARSE loss
             x_adv = pgd_linf(
-                model, xb, yb, yb_c, EPS, ALPHA, PGD_STEPS_TRAIN,
+                model, xb, yb, yb_c, eps, alpha, steps,
                 "coarse", A_tf=A_tf, training_flag=False
             )
 
