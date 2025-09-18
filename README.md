@@ -12,9 +12,7 @@ We study robustness against coarse adversarial perturbations, where adversarial 
 
 ## Features
 - CIFAR-10 training pipelines for NT, SAT (PGD-10), and CAT (PGD-10).
-- FMNIST training with NT and FGSM_r.
+- FMNIST training with NT, SAT (FGSM_r), and CAT (FGSM_r).
 - Coarse mapping utilities for semantic or random groupings.
 - Evaluation code for CASR-vs-ε curves.
 - Scripts to generate adversarial examples and visualize minimal perturbations.
-
-## Repository Structure
